@@ -1,10 +1,10 @@
-
 #ifndef DISPATCHER_H
 #define DISPATCHER_H
+#define MAX_PRIORITY_LEVELS 3
 
-#include "queue.h"  
+#include "queue.h"  // Ensure this path is correct based on your project structure
 
-// Reads the dispatch list from a file and enqueues processes into the appropriate queues
-void readDispatchList(const char* filename, QueueNode** realTimeQueue, QueueNode** userQueue);
+// Update the function signature to accept an array of user queues for multiple priorities
+void readDispatchList(const char* filename, QueueNode** realTimeQueue, QueueNode* userQueues[MAX_PRIORITY_LEVELS]);
 
 #endif // DISPATCHER_H
