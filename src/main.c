@@ -5,23 +5,36 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define MAX_PRIORITY_LEVELS 3  // Example: three priority levels for user processes
+#define MAX_PRIORITY_LEVELS 3  // with the assumption that there are only three priority levels for user processes
 
-void executeProcess(Process process) {
-    printf("Executing process: Arrival Time %d, Priority %d, Processor Time %d, Remaining Time %d\n",
-           process.arrivalTime, process.priority, process.processorTime, process.remainingProcessorTime);
-    // Simulate processing time reduction or complete the task as needed.
-    // For simplicity in this example, we'll assume it always completes.
+// Helper function to check if any user queue is not empty
+int anyUserQueueNotEmpty(QueueNode* userQueues[MAX_PRIORITY_LEVELS]) {
+    for (int i = 0; i < MAX_PRIORITY_LEVELS; i++) {
+        if (userQueues[i] != NULL) {
+            return 1; // found a non-empty queue
+        }
+    }
+    return 0; // all queues are empty
 }
 
-// Function to requeue process with adjusted priority if needed.
+void executeProcess(Process process) {
+    printf("Executing Process - Arrival Time: %d, Priority: %d, Processor Time: %d seconds, Memory Size: %d Mbytes",
+           process.arrivalTime, process.priority, process.processorTime, process.memorySize);
+    printf(", Printers: %d, Scanners: %d, Modems: %d, CDs: %d\n",
+           process.numPrinters, process.numScanners, process.numModems, process.numCDs);
+    
+    
+ 
+}
+
 void requeueProcessWithAdjustedPriority(QueueNode* userQueues[MAX_PRIORITY_LEVELS], Process process) {
-    // Adjust priority if not already at the lowest level and requeue.
     if (process.priority < MAX_PRIORITY_LEVELS - 1) {
         process.priority++;
     }
-    enqueue(&userQueues[process.priority], process);
+    enqueue(&userQueues[process.priority - 1], process); // Use updated priority, accounting for off-by-one in priority levels
 }
+
+
 
 int main() {
     QueueNode* realTimeQueue = NULL;
@@ -32,18 +45,18 @@ int main() {
     char filePath[260];
     scanf("%s", filePath);
 
-    readDispatchList(filePath, &realTimeQueue, userQueues); // Adjusted call
+    readDispatchList(filePath, &realTimeQueue, userQueues); 
 
     while (realTimeQueue != NULL || anyUserQueueNotEmpty(userQueues)) {
         Process processToRun = {0};
         int processFound = 0;
 
-        // Check real-time queue first
+        // check the real-time queue first
         if (realTimeQueue != NULL) {
             processToRun = dequeue(&realTimeQueue);
             processFound = 1;
         } 
-        // Then iterate through user queues based on priority
+        // then iterate through user queues based on priority
         else {
             for (int i = 0; i < MAX_PRIORITY_LEVELS && !processFound; i++) {
                 if (userQueues[i] != NULL) {
@@ -54,26 +67,27 @@ int main() {
         }
 
         if (processFound) {
+            // This segment goes inside the if (processFound) block
             if (allocateResources(&systemResources, processToRun) && allocateMemory(&systemResources, processToRun.memorySize)) {
                 executeProcess(processToRun);
+                // Assume process completes successfully here for simplicity
                 freeResources(&systemResources, processToRun);
                 freeMemory(&systemResources, processToRun.memorySize);
             } else {
                 printf("Unable to allocate resources/memory for process: Arrival Time %d. Re-queuing process.\n", processToRun.arrivalTime);
-                requeueProcessWithAdjustedPriority(userQueues, processToRun);
+                // Only requeue if the process has not been adjusted to the lowest priority yet
+                if (processToRun.priority < MAX_PRIORITY_LEVELS - 1) {
+                    requeueProcessWithAdjustedPriority(userQueues, processToRun);
+                } else {
+                    printf("Process at lowest priority cannot be allocated resources: Arrival Time %d. Dropping process.\n", processToRun.arrivalTime);
+                    // Optionally handle the dropping logic here
+                }
             }
+
         }
     }
 
     return 0;
 }
 
-// Helper function to check if any user queue is not empty
-int anyUserQueueNotEmpty(QueueNode* userQueues[MAX_PRIORITY_LEVELS]) {
-    for (int i = 0; i < MAX_PRIORITY_LEVELS; i++) {
-        if (userQueues[i] != NULL) {
-            return 1; // Found a non-empty queue
-        }
-    }
-    return 0; // All queues are empty
-}
+

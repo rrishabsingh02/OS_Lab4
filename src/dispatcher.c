@@ -3,8 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void readDispatchList(const char* filename, QueueNode** realTimeQueue, QueueNode** userQueue) {
-    FILE* file = fopen("dispatch_list.txt", "r");
+void readDispatchList(const char* filename, QueueNode** realTimeQueue, QueueNode* userQueues[MAX_PRIORITY_LEVELS]) {
+    FILE* file = fopen(filename, "r");
     if (!file) {
         fprintf(stderr, "Error opening file: %s\n", filename);
         exit(EXIT_FAILURE);
@@ -22,15 +22,20 @@ void readDispatchList(const char* filename, QueueNode** realTimeQueue, QueueNode
         if (tempProcess.priority == 0) {
             enqueue(realTimeQueue, tempProcess);
         } else {
-            enqueue(userQueue, tempProcess);
+            // Adjust for user processes to be enqueued according to their priority
+            // Ensuring priority is within bounds
+            int queueIndex = tempProcess.priority - 1; // Assuming user priority starts at 1
+            if (queueIndex < 0 || queueIndex >= MAX_PRIORITY_LEVELS) {
+                fprintf(stderr, "Invalid priority level %d for process. Adjusting to within bounds.\n", tempProcess.priority);
+                queueIndex = queueIndex < 0 ? 0 : MAX_PRIORITY_LEVELS - 1; // Adjust if out of bounds
+            }
+            enqueue(&userQueues[queueIndex], tempProcess);
         }
     }
 
     // Check if the loop exited due to an error or premature EOF
     if (scanResult != EOF && scanResult != 8) {
         fprintf(stderr, "Error reading dispatch list. The file format may be incorrect or the file is corrupted.\n");
-        fclose(file);
-        exit(EXIT_FAILURE);
     }
 
     fclose(file);
