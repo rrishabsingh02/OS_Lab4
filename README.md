@@ -1,6 +1,5 @@
 Rishab Singh -100787473
-Nancy Emanuel -100657804
-Hishan Sayanthan -100786649
+Rupam Mittal -100640634
 
 
 # OS_Lab4
